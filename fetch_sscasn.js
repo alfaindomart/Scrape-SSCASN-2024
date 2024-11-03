@@ -55,7 +55,7 @@ async function storeData() {
     //kasih nama worksheet
     sheet.utils.book_append_sheet(workbook, worksheet, "CPNS_HI")
     //kasih nama file
-    sheet.writeFile(workbook, "Cpns arsitektur 2024.xlsx", { compression: true });
+    sheet.writeFile(workbook, "Cpns HI 2024.xlsx", { compression: true });
 }
 
 storeData()

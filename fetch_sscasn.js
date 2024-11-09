@@ -24,6 +24,7 @@ async function fetchData(params) {
             return response.data.data.data
         } catch (error) {
             console.error('Error fetching data', error)
+            return null
         }
 
 }
@@ -33,29 +34,47 @@ async function storeData() {
 
     let allData = []
     let params = 0
-    let data = await fetchData(params)
+    let data
 
-    console.log('fetch finished')
+    let attempt = 0
+    const maxRetries = 5
+    const firstDelay = 1000
 
-    while (data) {
-    console.log('while loop started')
+    do {
+        try {
+            data = await fetchData(params)
+            console.log(`fetch finished, params: ${params}`)
+            if (data) {
+                allData = allData.concat(data)
+                params += 10
+                attempt = 0 //reset attempt if fetch successful
 
-    allData = allData.concat(data)
-    console.log('data stored')
-    params += 10
-    console.log(params)
-    data = await fetchData(params)
-    if (data) console.log('Data is found, repeat loop')
-    }
+                console.log('data fetched and stored, making a new request in a second')
+                await new Promise(resolve => setTimeout(resolve, 500))
+            } else {
+                throw new Error('no data returned')
+            }
+        } catch (error) {
+            console.error(`error fetching, retrying.... Retries: ${attempt}`)
+
+            if (attempt > maxRetries) {
+                console.log('Maximum retry attempts reached. Stopping fetch...')
+                break;
+            }
+            attempt++
+            const delay = firstDelay * Math.pow(2, attempt)
+            console.log(`Waiting ${delay} ms before retrying`)
+            await new Promise(resolve => setTimeout(resolve, delay))
+        }
+    } while (data)
 
     console.log('no more data')
 
     const worksheet = sheet.utils.json_to_sheet(allData)
     const workbook = sheet.utils.book_new()
-    //kasih nama worksheet
-    sheet.utils.book_append_sheet(workbook, worksheet, "CPNS_HI")
-    //kasih nama file
-    sheet.writeFile(workbook, "Cpns HI 2024.xlsx", { compression: true });
+    
+    sheet.utils.book_append_sheet(workbook, worksheet, /*kasih nama worksheet*/ "CPNS_HI")
+    sheet.writeFile(workbook, /*kasih nama file*/ "Cpns HI 2024.xlsx", { compression: true });
 }
 
 storeData()
